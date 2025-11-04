@@ -3,7 +3,18 @@ const router = express.Router();
 const oracledb = require('oracledb');
 const {conectar} = require('../OracleDb/oraclestring');
 
-router.post("/", async (req,res) => {
+// Middleware para verificar si Oracle está disponible
+const verificarOracle = (req, res, next) => {
+    if (!req.app.locals.oracleDisponible) {
+        return res.status(503).json({
+            error: 'Servicio de Oracle no disponible',
+            mensaje: 'La base de datos Oracle no está disponible en este momento. Por favor, inténtelo más tarde.'
+        });
+    }
+    next();
+};
+
+router.post("/", verificarOracle, async (req,res) => {
     let connection;
 
 
@@ -40,7 +51,7 @@ res.json({
     res.status(500).json({error:'Error al insertar en Oracle', detalle: error.message})
 } finally {
     if (connection) {
-        try { await connection.close(); }catch(err){ console.error('Error cerrando conexion OracleDB:',erro); }
+        try { await connection.close(); }catch(err){ console.error('Error cerrando conexion OracleDB:',err); }
     }
 }
 }
